@@ -2,18 +2,19 @@ package io.hantong;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class DelegatingDataProvider {
 	private static volatile DelegatingDataProvider instance;
@@ -21,11 +22,7 @@ public class DelegatingDataProvider {
 	private static final String URL = "https://opendata.dwd.de/weather/weather_reports/road_weather_stations/";
 
 	private DelegatingDataProvider() {
-		try {
-			stationList = getFromURL(URL, "/\">", "/</a>");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		stationList = getHrefFromURL(URL, true);
 	}
 
 	public static DelegatingDataProvider getInstance() {
@@ -43,28 +40,28 @@ public class DelegatingDataProvider {
 		return stationList;
 	}
 
-	// get the content from url and return a list of items, which are in between of
-	// "left" and "right" elements
-	@SuppressWarnings("deprecation")
-	private List<String> getFromURL(String url, String left, String right) throws MalformedURLException, IOException {
-		List<String> list;
-		InputStream in = new URL(url).openStream();
+	private List<String> getHrefFromURL(String url, boolean removeLast) {
+		List<String> list = new ArrayList<>();
 		try {
-			String s = IOUtils.toString(in);
-			//System.out.println(s);
-			String[] stationArray = StringUtils.substringsBetween(s, left, right);
-			list = new ArrayList<>(Arrays.asList(stationArray));
-			list.remove(0);  //remove "../"
-//			for (String l : list)
-//				System.out.println(l);
+			Document doc = Jsoup.connect(url).get();
+			Elements links = doc.select("a[href]");
+			links.remove(0);
+			for (Element link : links) {
+				String s = link.text();
+				if (removeLast && s != null && s.length() > 0) {
+					list.add(s.substring(0, s.length() - 1));
+				} else {
+					list.add(s);
+				}
+			}
 
-		} finally {
-			IOUtils.closeQuietly(in);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		return list;
 	}
 
-	public Map<String, Collection<byte[]>> getRoadConditions() throws IOException {
+	public Map<String, Collection<byte[]>> getRoadConditions() {
 		Map<String, Collection<byte[]>> map = new HashMap<>();
 		for (String station : stationList) {
 			map.put(station, getCollction(station));
@@ -74,16 +71,12 @@ public class DelegatingDataProvider {
 
 	private Collection<byte[]> getCollction(String station) {
 		Collection<byte[]> values = new ArrayList<>();
-		try {
-			String url = URL + "/" + station;
-			List<String> fileList = getFromURL(url, "\">", "</a>");
-			for (String file : fileList) {
-				values.add(getBytes(url + "/" + file));
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		String url = URL + "/" + station;
+		List<String> fileList = getHrefFromURL(url, false);
+		for (String file : fileList) {
+			values.add(getBytes(url + "/" + file));
 		}
-		return null;
+		return values;
 	}
 
 	private byte[] getBytes(String url) {
@@ -100,8 +93,7 @@ public class DelegatingDataProvider {
 	}
 
 	public Collection<RoadDataMeasurement> getRoadConditions(String stationId, Date since) {
-		// todo: fetch and return data from
-		// https://opendata.dwd.de/weather/weather_reports/road_weather_stations/
-		return null;
+		Collection<RoadDataMeasurement> res = new ArrayList<>();
+		return res;
 	}
 }
