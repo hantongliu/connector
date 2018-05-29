@@ -1,15 +1,14 @@
 package io.hantong;
 
-import java.util.Collection;
 import java.util.Date;
 
 public class RoadDataMeasurement {
 
 	private Date date;
 	private String weatherStationId;
-	private Collection<byte[]> measuredData;
+	private byte[] measuredData;
 
-	public RoadDataMeasurement(Date date, String weatherStationId, Collection<byte[]> measuredData) {
+	public RoadDataMeasurement(Date date, String weatherStationId, byte[] measuredData) {
 		super();
 		this.date = date;
 		this.weatherStationId = weatherStationId;
@@ -32,11 +31,11 @@ public class RoadDataMeasurement {
 		this.weatherStationId = weatherStationId;
 	}
 
-	public Collection<byte[]> getMeasuredData() {
+	public byte[] getMeasuredData() {
 		return measuredData;
 	}
 
-	public void setMeasuredData(Collection<byte[]> measuredData) {
+	public void setMeasuredData(byte[] measuredData) {
 		this.measuredData = measuredData;
 	}
 
